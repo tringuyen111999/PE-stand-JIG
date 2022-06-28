@@ -1,0 +1,46 @@
+pi1:  192.168.11.86  #static ip :110.15   pw: gremsy1304
+pi1:  192.168.11.94  #static ip :110.16   pw: gremsy1304
+
+**test speed usb 
+https://khalsalabs.com/how-to-test-usb-drive-speed-with-python-code/
+https://peppe8o.com/testing-raspberry-pi-storage-speed-sd-usb-with-dd/
+youtube.com/watch?v=xfhzbw93rzw
+
+**Ethernet cable
+https://www.youtube.com/watch?v=5DCPDQnRXm8
+https://www.youtube.com/watch?v=AXPBXZkPFnU
+
+**firebase:
+https://www.geeksforgeeks.org/working-with-json-data-in-python/?ref=lbp
+
+** mavlink:
+https://www.youtube.com/watch?v=DGAB34fJQFc
+
+
+
+## cách test ethernet:
+pi1(trên bộ test )  --->          pi2(payload)
+
+B1:
+pi1 gửi lệnh :                     iperf3 -s    
+
+B2:
+pi1 tự nhập lệnh: 		iperf3 -c 192.168.110.16
+TXP- s6
+TXN -s5
+RXP -s4
+RXN -s3
+
+xám -- trắng --- tím ---cam
+
+
+
+## cách test usb:
+sudo mount /dev/sda /media/pi/4AC8-4D53
+b1: mount vào ổ uSB 
+	cd /media/pi/4AC8-4D53    4AC8-4D53: tên usb
+b2: test tốc độ ghi
+	sudo dd if=/dev/zero of=/media/pi/4AC8-4D53/speedTestFile bs=20M count=5 oflag=d
+irect
+b3: test tốc độ đọc
+	sudo dd if=./speedTestFile of=/dev/zero bs=20M count=5 oflag=dsync
