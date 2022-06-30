@@ -80,7 +80,7 @@ def check_speed_usb():
     if write_speed != 0:
         write_speed = write_speed.split(' ')
         print(write_speed[1])
-        if float(write_speed[1]) >= 5: 
+        if float(write_speed[1]) >= 20:  # spec write > 20 MBps
             write_PF = True
 
     # check speed read
@@ -88,7 +88,7 @@ def check_speed_usb():
     if read_speed != 0 :
         read_speed = read_speed.split(' ')
         print(read_speed[1])
-        if float(read_speed[1]) >=15:
+        if float(read_speed[1]) >=20 :   # spec read > 20 MBps
             read_PF = True
 
     # output result
