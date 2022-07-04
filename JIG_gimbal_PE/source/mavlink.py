@@ -47,8 +47,8 @@ def recv_match(self, condition=None, type=None, blocking=False, timeout=None):
     blocking:    Set to wait until message arrives before method completes. 
     timeout:     ? <!-- timeout for blocking message when the system will return. Is this just a time? -->
     '''
-    msg = the_connection.recv_match(blocking=True)
-    print(msg)
+    msg = the_connection.recv_match(type="HEARTBEAT", blocking=True, timeout=5)
+    return msg
 
 
 def heartbeat_send(self, type, autopilot, base_mode, custom_mode, system_status, mavlink_version=3, force_mavlink1=False):

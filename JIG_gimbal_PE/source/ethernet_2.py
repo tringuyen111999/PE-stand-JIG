@@ -18,8 +18,8 @@ s.listen(5)
 print('Socket awaiting messages')
 (conn, addr) = s.accept()
 print('Connected')
-time.sleep(10)
 # awaiting for message
+
 while 1:
     data = conn.recv(1024).decode('utf-8')
     print ('I sent a message back in response to: ', data)

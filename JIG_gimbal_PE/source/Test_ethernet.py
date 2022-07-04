@@ -51,4 +51,4 @@ def check_speed_ethernet(ser_check):
     return speed_test
 
 ###################################
-serial_init()
+# serial_init()
