@@ -31,7 +31,6 @@ def mav_init():
         heartbeat_send(self=0 ,type=123,autopilot=8, base_mode=0, custom_mode=0, system_status=1)
 
         msg = the_connection.recv_match(type="HEARTBEAT", blocking=True, timeout=5)
-
         if msg is not None:
             print("jig connected.")
             return True
