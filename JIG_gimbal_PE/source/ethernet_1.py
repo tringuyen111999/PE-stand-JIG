@@ -11,14 +11,14 @@ from mavlink import recv_match,heartbeat_send,mav_init
 time_exit = False
 HOST = '192.168.110.16' # Enter IP or Hostname of your server
 PORT = 12345 # Pick an open Port (1000+ recommended), must match the server port
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST,PORT))
+
+
 #---------------------------------------------------------------------------------------------------------------
 speed_test = False
 speed = []
 testing = False
 time_exit = False
-global the_connection
+count_maintest = 0
 #---------------------------------------------------------------------------------------------------------------
 def test_ethernet():
     ethernet_value = False
@@ -53,53 +53,76 @@ def main_test():
     elif test_ethernet() == True and check_speed_usb() == False:
         result_test = 2 # 0x10
     else:
-        result_test = 0 # 0x01
+        result_test = 0 # 0x00
     return result_test
 #---------------------------------------------------------------------------------------------------------------
-
+while 1:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST,PORT))
+        ether_init = True
+    except Exception:
+        print('connect ethernet fail')
+        ether_init = False
+    if ether_init == True: break
 #init success is mavlink connected 
+print('ethernet connected')
 status_sys,control,result = 0,0,0
-if mav_init() == True:
-    # get status of RP4 to standby(status =1) and send back to S4
-    print('send 100')
-    status_sys,base,custom = 1,0,0
-    heartbeat_send(self=0 ,type=123,autopilot=8,system_status=status_sys, base_mode=control, custom_mode= result)
-    # wait hearbeat from S4
-    msg_receive = recv_match(self=0)
-    print(msg_receive)
-    type = msg_receive.get_type()
-    if type == "HEARTBEAT":
-            m_is_heartbeat_live = True
-            jig_system_status = msg_receive.system_status
-            print("HB receive ", jig_system_status)
-            pass
-    # Receive heartbeat and process
-    # control =1(run) is start test--> status =2 (running)
-    if control == 0: # control =1
-        print('send 210')
-        status_sys,control,result = 2,1,0
-        heartbeat_send(self=0 ,type=123,autopilot=8,system_status=status_sys, base_mode=control, custom_mode= result)
-        testing_result = 0
-        result = main_test()
-        print(result)
-        if result != 0:
-            status =3 # status =3 is done
-            
-    # control =2(stop)
-    elif control == 2:
-        if status_sys ==2:
-            #running
-            pass
-        elif status_sys ==3:
-            #done
-            pass
-        print('send 100')
-        status_sys,base,custom = 1,0,0
-        heartbeat_send(self=0 ,type=123,autopilot=8,system_status=status_sys, base_mode=control, custom_mode= result)
+while 1:
+    try:
+        mav_innitial = mav_init()
+    except Exception:
+        print('connection fail')
+    if mav_innitial == True: break
 
-    elif control == 0:
-        print('send 100')
-        status_sys,base,custom = 1,0,0
-        heartbeat_send(self=0 ,type=123,autopilot=8,system_status=status_sys, base_mode=control, custom_mode= result)
-        pass
-    
+the_connection = mavutil.mavlink_connection("/dev/ttyAMA0", baud=115200)
+if mav_innitial == True:
+    while 1:
+        # get status of RP4 to standby(status =1) and send back to S4
+            print('send 100')
+            status_sys,control,result = 1,0,0
+            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
+            print(status_sys,control,result)
+            # wait hear beat from S4
+            msg_receive = recv_match(self=0)
+            # print(msg_receive)
+            type = msg_receive.get_type()
+            if type == "HEARTBEAT":
+                    m_is_heartbeat_live = True
+                    jig_system_status = msg_receive.system_status
+                    jig_system_base = msg_receive.base_mode
+                    jig_system_custom = msg_receive.custom_mode
+                    # print("HB receive status: ", jig_system_status)
+                    # print("HB receive base: ", jig_system_base)
+                    # print("HB receive custom: ", jig_system_custom)
+            if msg_receive.system_status ==1 : break
+    while 1:
+        print("start")
+        msg_receive = recv_match(self=0)
+        # print(msg_receive)
+        type = msg_receive.get_type()
+        if type == "HEARTBEAT":
+                m_is_heartbeat_live = True
+                jig_system_status = msg_receive.system_status
+                jig_system_base = msg_receive.base_mode
+                jig_system_custom = msg_receive.custom_mode
+                print("HB receive status : ", jig_system_status)
+                print("HB receive base: ", jig_system_base)
+                print("HB receive custom: ", jig_system_custom)
+        # Receive heartbeat and process
+        # control =1(run) is start test--> status =2 (running)
+        if jig_system_base == 1: # control =1
+            print('send 210')
+            status_sys,control,result = 2,1,0
+            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
+            result = main_test()
+            print("result: ",result)
+            print('send result')
+            status_sys = 3 # status =3 is done
+            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
+
+        # control =2(stop)
+        elif jig_system_base == 2:
+            print('send 100 to back standby')
+            status_sys,control,result =1,0,0
+            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)

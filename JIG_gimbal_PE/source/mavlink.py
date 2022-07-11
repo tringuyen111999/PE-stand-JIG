@@ -17,7 +17,7 @@ def mav_init():
 
     while not mav_connected:
         try:
-            the_connection = mavutil.mavlink_connection("/dev/ttyUSB0", baud=115200)
+            the_connection = mavutil.mavlink_connection("/dev/ttyAMA0", baud=115200)
             mav_connected = True
         except:
             print("Can not init mavlink with gimbal. Try again...")
@@ -28,8 +28,7 @@ def mav_init():
 
     while not time_exit:
         # request heartbeat from stm32
-        heartbeat_send(self=0 ,type=123,autopilot=8, base_mode=0, custom_mode=0, system_status=1)
-
+        heartbeat_send(type=123,autopilot=8,status = 0,control =0,result = 0)
         msg = the_connection.recv_match(type="HEARTBEAT", blocking=True, timeout=5)
         if msg is not None:
             print("jig connected.")
@@ -50,14 +49,14 @@ def recv_match(self, condition=None, type=None, blocking=False, timeout=None):
     return msg
 
 
-def heartbeat_send(self, type, autopilot, base_mode, custom_mode, system_status, mavlink_version=3, force_mavlink1=False):
+def heartbeat_send(type, autopilot,status, control, result, mavlink_version=3, force_mavlink1=False):
     # Send heartbeat from a GCS (types are define as enum in the dialect file). 
     the_connection.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_GCS,
-                                                    mavutil.mavlink.MAV_AUTOPILOT_INVALID, 0, 0, 0)
-
+                                                    mavutil.mavlink.MAV_AUTOPILOT_INVALID, system_status=status, base_mode= control, custom_mode=result)
+    
     # Send heartbeat from a MAVLink application. 
-    the_connection.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
-                                                mavutil.mavlink.MAV_AUTOPILOT_INVALID, 0, 0, 0)
+    # the_connection.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
+    #                                             mavutil.mavlink.MAV_AUTOPILOT_INVALID, 0, 0, 0)
 
 
 # mav_init()
