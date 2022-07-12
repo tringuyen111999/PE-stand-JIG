@@ -29,11 +29,11 @@ def mav_init():
     while not time_exit:
         # request heartbeat from stm32
         heartbeat_send(type=123,autopilot=8,status = 0,control =0,result = 0)
+        print("send heartbeat")
         msg = the_connection.recv_match(type="HEARTBEAT", blocking=True, timeout=5)
         if msg is not None:
             print("jig connected.")
             return True
-    
         else:
             print("jig timeout. Try again...")
             return False

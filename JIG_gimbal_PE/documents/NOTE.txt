@@ -1,5 +1,9 @@
-pi1:  192.168.11.86  #static ip :110.15   pw: gremsy1304
-pi1:  192.168.11.94  #static ip :110.16   pw: gremsy1304
+#T3 PE
+pi1:  192.168.50.85  #static ip :110.15   pw: gremsy1304
+pi2:  192.168.50.223  #static ip :110.16   pw: gremsy1304
+#PIXY PE
+pi1:  192.168.50.132  #static ip :110.20   pw: gremsy1304
+pi2:  192.168.11.111  #static ip :110.21   pw: gremsy1304
 
 **test speed usb 
 https://khalsalabs.com/how-to-test-usb-drive-speed-with-python-code/
