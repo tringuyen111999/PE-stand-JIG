@@ -9,7 +9,7 @@ from pymavlink import mavutil
 from mavlink import recv_match,heartbeat_send,mav_init
 #---------------------------------------------------------------------------------------------------------------
 time_exit = False
-HOST = '192.168.110.21' # Enter IP or Hostname of your server
+HOST = '192.168.110.16' # Enter IP or Hostname of your server
 PORT = 12345 # Pick an open Port (1000+ recommended), must match the server port
 
 
@@ -27,7 +27,7 @@ def test_ethernet():
     s.send('start'.encode('utf-8'))
     reply = s.recv(1024)
     if reply == 'testing'.encode('utf-8'):
-        proc = subprocess.Popen(["iperf3 -c 192.168.110.21"], stdout=subprocess.PIPE, shell=True)
+        proc = subprocess.Popen(["iperf3 -c 192.168.110.16"], stdout=subprocess.PIPE, shell=True)
         time.sleep(0.1)
         (out, err) = proc.communicate()
         out_new = out.decode().split('\n')
@@ -98,14 +98,14 @@ while mav_innitial == True:
     while 1:
     # get status of RP4 to standby(status =1) and send back to S4
         listen()
-        if jig_system_base != 1:
+        if jig_system_base != 1 and jig_system_status != 3:
             print('send 100')
             status_sys = 1
             heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
             print(status_sys,control,result)
             # wait hear beat from S4
         else: break
-        
+
     while 1:
         print("begin")
         listen()
@@ -113,17 +113,18 @@ while mav_innitial == True:
         # control =1(run) is start test--> status =2 (running)
         if jig_system_base == 1 and jig_system_status != 3: # control =1
             print('send 210 to RUNNING test')
-            status_sys,control,result = 2,1,0
-            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
-            for count in range(0,3):
+            status_sys,control = 2,1
+            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control,result=result)
+            for count in range(1,4):
                 result = main_test()
+                result = count*10 + result 
                 print("result: ",result)
+                heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
+                if (result-count*10) ==3:break
             status_sys = 3 # status =3 is done
         # control =2(stop)
         elif jig_system_base == 2:
             print('stop')
-            # status_sys,control,result =0,0,0
-            # heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
             break
         
         while 1:

@@ -74,23 +74,22 @@ def check_speed_usb():
     result = False
     # find usb
     name_usb = find_usb()
+    if len(name_usb)!= 14:
+        # check speed write
+        write_speed = check_speed_write_usb(name_usb)
+        if write_speed != 0:
+            write_speed = write_speed.split(' ')
+            print(write_speed[1])
+            if float(write_speed[1]) >= 20:  # spec write > 20 MBps
+                write_PF = True
 
-    # check speed write
-    write_speed = check_speed_write_usb(name_usb)
-    if write_speed != 0:
-        write_speed = write_speed.split(' ')
-        print(write_speed[1])
-        if float(write_speed[1]) >= 20:  # spec write > 20 MBps
-            write_PF = True
-
-    # check speed read
-    read_speed = check_speed_read_usb(name_usb)
-    if read_speed != 0 :
-        read_speed = read_speed.split(' ')
-        print(read_speed[1])
-        if float(read_speed[1]) >=20 :   # spec read > 20 MBps
-            read_PF = True
-
+        # check speed read
+        read_speed = check_speed_read_usb(name_usb)
+        if read_speed != 0 :
+            read_speed = read_speed.split(' ')
+            print(read_speed[1])
+            if float(read_speed[1]) >=20 :   # spec read > 20 MBps
+                read_PF = True
     # output result
     if write_PF == True and read_PF == True:
         result = True
