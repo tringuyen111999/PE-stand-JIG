@@ -1,11 +1,11 @@
 from __future__ import print_function
 from asyncore import write
-from sys import stdout
+# from sys import stdout
 import time
-from unittest import result
-import serial
+# from unittest import result
+# import serial
 import subprocess
-import re
+# import re
 
 def find_usb():
     global usb
@@ -22,7 +22,9 @@ def find_usb():
                 usb = usb.strip()
                 break
     return usb
-
+# coypy_file_cmd = ("sudo","sshpass","-p","gremsy1304","scp","/home/pi/CV25_carrier_test_jig/document/CV25_Mio_tester","root@192.168.30.11:/root")
+# time.sleep(0.5)
+# proc = subprocess.check_output(coypy_file_cmd)
 
 def check_speed_write_usb(usb):
     speed_write=0
@@ -90,7 +92,15 @@ def check_speed_usb():
             print(read_speed[1])
             if float(read_speed[1]) >=20 :   # spec read > 20 MBps
                 read_PF = True
+                
+    name_delete = "rm -f {}".format(name_usb)
+    umount_usb = "sudo umount /dev/sdb1"
+    proc = subprocess.Popen([name_delete], stderr=subprocess.PIPE, shell=True)
+    time.sleep(0.1)
+    proc = subprocess.Popen([umount_usb], stderr=subprocess.PIPE, shell=True)
+    time.sleep(0.1)
     # output result
     if write_PF == True and read_PF == True:
         result = True
+    
     return result

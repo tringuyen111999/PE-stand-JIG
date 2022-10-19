@@ -1,65 +1,63 @@
 import socket
 import time
 import subprocess
+import os
+import sys
+from threading import Thread
+import threading
 #---------------------------------------------------------------------------------------------------------------
-from test_usb_speed import check_speed_read_usb, check_speed_write_usb,find_usb,check_speed_usb
+from test_usb_speed import check_speed_usb
 #---------------------------------------------------------------------------------------------------------------
-#mavlink pi_s4
-from pymavlink import mavutil
-from mavlink import recv_match,heartbeat_send,mav_init
-#---------------------------------------------------------------------------------------------------------------
-time_exit = False
-HOST = '192.168.110.16' # Enter IP or Hostname of your server
-PORT = 12345 # Pick an open Port (1000+ recommended), must match the server port
+# mavlink pi_s4
+# from pymavlink import mavutil
+from mavlink import mav_heartbeat_send,mav_init,mavlink_wait_message
 
-
 #---------------------------------------------------------------------------------------------------------------
-speed_test = False
 speed = []
-testing = False
-time_exit = False
-count_maintest = 0
 #---------------------------------------------------------------------------------------------------------------
-def test_ethernet():
-    ethernet_value = False
-
-    #test ethernet
-    s.send('start'.encode('utf-8'))
-    reply = s.recv(1024)
-    if reply == 'testing'.encode('utf-8'):
-        proc = subprocess.Popen(["iperf3 -c 192.168.110.16"], stdout=subprocess.PIPE, shell=True)
-        time.sleep(0.1)
+def ping_ethernet():
+    check_IP = False
+    for i in range(0,5):
+        proc = subprocess.Popen(["ping 192.168.110.21 -c 3"], stdout=subprocess.PIPE, shell=True)
         (out, err) = proc.communicate()
         out_new = out.decode().split('\n')
-        # print(out_new) 
+        for i in out_new:
+            print(i,'\n')
+            if '64 bytes from 192.168.110.21' in i:
+                check_IP = True
+                break
+        if check_IP == True:break
+    return check_IP
+
+
+def test_ethernet():
+    ethernet_value = False
+    for i in range(0,10):
+        time.sleep(1)
+        proc = subprocess.Popen(["iperf3 -c 192.168.110.21"], stdout=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        out_new = out.decode().split('\n')
+
         # process speed data
         for i in range(0,len(out_new)):
             out_speed =out_new[i].strip().split()
-            # print(out_speed)
             for n in range(0,len(out_speed)):
                 if out_speed[n] == 'Mbits/sec':
                     speed.append(out_speed[n-1])
-    if len(speed)>0:
-        if float(speed[len(speed)-1]) >= 90 and float(speed[len(speed)-2]) >= 90:
-            ethernet_value = True
+        print(speed)
+        if len(speed)>0:
+            if float(speed[len(speed)-1]) >= 90 and float(speed[len(speed)-2]) >= 90:
+                ethernet_value = True
+                break
+
     return ethernet_value
 #---------------------------------------------------------------------------------------------------------------
-def listen():
-    global msg_receive, jig_system_base,jig_system_custom,jig_system_status
-    try:
-        msg_receive = recv_match(self=0)
-        # print(msg_receive)
-        type = msg_receive.get_type()
-        if type == "HEARTBEAT":
-                m_is_heartbeat_live = True
-                jig_system_status = msg_receive.system_status
-                jig_system_base = msg_receive.base_mode
-                jig_system_custom = msg_receive.custom_mode
-                print("HB receive status: ", jig_system_status)
-                print("HB receive base: ", jig_system_base)
-                print("HB receive custom: ", jig_system_custom)
-    except Exception: pass
-    return msg_receive
+
+HOST = '192.168.110.20' # Enter IP or Hostname of your server
+PORT = 1234 # Pick an open Port (1000+ recommended), must match the server port
+
+
+
 def main_test():
     result_test = 0
     if test_ethernet() == True and check_speed_usb() == True:
@@ -72,64 +70,38 @@ def main_test():
         result_test = 0 # 0x00
     return result_test
 
-#---------------------------------------------------------------------------------------------------------------
-while 1:
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((HOST,PORT))
-        ether_init = True
-    except Exception:
-        print('connect ethernet fail')
-        ether_init = False
-    if ether_init == True: break
-#init success is mavlink connected 
-print('ethernet connected')
-status_sys,control,result = 0,0,0
-while 1:
-    try:
-        mav_innitial = mav_init()
-    except Exception:
-        print('connection fail')
-    if mav_innitial == True: break
 
-the_connection = mavutil.mavlink_connection("/dev/ttyAMA0", baud=115200)
+def main():
+    global status_sys,control,result
+    status_sys,control,result = 0,0,0 
+    mav_init()
+        # status_ethernet = check_ethernet()
+    while True:
+        print("send heartbeat")
+        status_sys,control,result =1,0,0
+        mav_heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
+        heart_beart_receive = mavlink_wait_message()
+        # status_receive =  heart_beart_receive[0]
+        control_receive   =  heart_beart_receive[1]
 
-while mav_innitial == True:
-    while 1:
-    # get status of RP4 to standby(status =1) and send back to S4
-        listen()
-        if jig_system_base != 1 and jig_system_status != 3:
-            print('send 100')
-            status_sys = 1
-            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
-            print(status_sys,control,result)
-            # wait hear beat from S4
-        else: break
-
-    while 1:
-        print("begin")
-        listen()
-        # Receive heartbeat and process
-        # control =1(run) is start test--> status =2 (running)
-        if jig_system_base == 1 and jig_system_status != 3: # control =1
-            print('send 210 to RUNNING test')
-            status_sys,control = 2,1
-            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control,result=result)
-            for count in range(1,4):
-                result = main_test()
-                result = count*10 + result 
-                print("result: ",result)
-                heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
-                if (result-count*10) ==3:break
-            status_sys = 3 # status =3 is done
-        # control =2(stop)
-        elif jig_system_base == 2:
-            print('stop')
+        if control_receive == 1 and status_sys !=3:
+            #send back to s4
+            status_sys, control =2,1
+            mav_heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
+            print("receive status ==1")
+            if ping_ethernet() == True:
+                result_test_final = main_test()
+                print("result:  ",result_test_final)
+                status_sys =3
             break
+
         
-        while 1:
-            print('send result')
-            heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result)
-            print(status_sys,control,result)
-            listen()
-            if jig_system_base == 2: break
+    #send result
+    while True:
+        print('send result')
+        mav_heartbeat_send(type=123,autopilot=8,status=status_sys, control=control, result= result_test_final)
+        print(status_sys,control,result_test_final)
+        mavlink_wait_message()
+        if heart_beart_receive[1] == 2 : break
+
+main()
